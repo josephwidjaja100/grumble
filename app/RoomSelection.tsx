@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View, TextInput, Alert } from "react-native";
 import { getAuth, signOut } from '@react-native-firebase/auth';
-import { initializeApp } from '@react-native-firebase/app';
-import { collection, query, where, getDocs, getFirestore, setDoc, getDoc, doc } from '@react-native-firebase/firestore'
+import { collection, doc, getDoc, getDocs, getFirestore, query, setDoc, where } from '@react-native-firebase/firestore';
+import React, { useState } from "react";
+import { Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import SwipeScreen from "./SwipeScreen";
+import { firestore } from '../utils/firebase';
 
 export default function RoomSelection({ user }) {
   const [currentScreen, setCurrentScreen] = useState('selection');
@@ -21,31 +21,25 @@ export default function RoomSelection({ user }) {
   };
 
   const createRoom = async () => {
-    console.log('Creating new room...');
-    const firestore = getFirestore();
     const roomDb = collection(firestore, 'rooms');
-    getDocs(roomDb).then(snapshot => {
-      snapshot.forEach(doc => {
-        console.log(doc.id, '=>', doc.data());
-      });
+    const snapshot = await getDocs(roomDb);
+
+    snapshot.forEach(doc => {
+      console.log(doc.id, '=>', doc.data());
     });
 
     let newRoomCode = '';
 
     while(true){
       newRoomCode = generateRoomCode();
-      console.log('Generated room code:', newRoomCode);
 
       const roomExists = await getDocs(query(roomDb, where('code', '==', newRoomCode)));
-      console.log("hello");
+
       if (roomExists.empty) {
-        console.log('Room code is unique:', newRoomCode);
         setRoomCode(newRoomCode);
         break; 
       }
     }
-
-    console.log("hi");
 
     console.log('New room code:', newRoomCode);
 
@@ -66,7 +60,6 @@ export default function RoomSelection({ user }) {
   };
 
   const joinRoom = async () => {
-    const firestore = getFirestore();
     const roomDb = collection(firestore, 'rooms');
     
     if (joinRoomCode.length !== 6) {

@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "155134834532",
+    "project_id": "grumble-466615",
+    "storage_bucket": "grumble-466615.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:155134834532:android:eb972c47dd9164bf23ec71",
+        "android_client_info": {
+          "package_name": "com.jwidjaja.grumble"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "155134834532-lams2c6hbc5clr31b68700rv7a3hcrq9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCqzcr8WpyyuslWeMnAWxuEsWhEP4u3XXs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "155134834532-lams2c6hbc5clr31b68700rv7a3hcrq9.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "155134834532-pgght1hkbk8p7uskrdprgc7l0h1ks7mf.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.jwidjaja.grumble"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
