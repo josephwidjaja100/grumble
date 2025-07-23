@@ -3,12 +3,13 @@ import {
   GoogleSigninButton,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import { Image, Pressable, StyleSheet, Text, View, Alert } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View, Alert } from 'react-native';
+import { GoogleAuthProvider, getAuth, signInWithCredential }  from '@react-native-firebase/auth'
 
 export default function () {
   GoogleSignin.configure({
-    webClientId: '155134834532-lams2c6hbc5clr31b68700rv7a3hcrq9.apps.googleusercontent.com', // client ID of type WEB for your server. Required to get the `idToken` on the user object, and for offline access.
-    scopes: ['profile', 'email', 'openid'], // what API you want to access on behalf of the user, default is email and profile
+    webClientId: '155134834532-lams2c6hbc5clr31b68700rv7a3hcrq9.apps.googleusercontent.com', 
+    scopes: ['profile', 'email', 'openid'], 
     iosClientId: '155134834532-pgght1hkbk8p7uskrdprgc7l0h1ks7mf.apps.googleusercontent.com',
   });
 
@@ -20,7 +21,11 @@ export default function () {
           try {
             await GoogleSignin.hasPlayServices();
             const userInfo = await GoogleSignin.signIn();
-            console.log(JSON.stringify(userInfo, null, 2));
+            if(userInfo.data){
+              const idToken = GoogleAuthProvider.credential(userInfo.data.idToken);
+              console.log(JSON.stringify(userInfo, null, 2));
+              signInWithCredential(getAuth(), idToken);
+            }
           } catch (error: any) {
             if (error.code === statusCodes.SIGN_IN_CANCELLED) {
               // user cancelled the login flow
@@ -78,7 +83,7 @@ const styles = StyleSheet.create({
   },
   googleButtonText: {
     fontSize: 16,
-    color: '#222',
+    color: '#7084D7',
     fontWeight: '600',
     letterSpacing: 0.2,
     flexShrink: 0,

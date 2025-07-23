@@ -10,7 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jwidjaja.grumble"
+      "bundleIdentifier": "com.jwidjaja.grumble",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -42,7 +43,18 @@
         {
           "iosUrlScheme": "com.googleusercontent.apps.155134834532-pgght1hkbk8p7uskrdprgc7l0h1ks7mf"
         }
-      ]
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-firebase/firestore"
     ],
     "experiments": {
       "typedRoutes": true

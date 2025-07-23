@@ -1,34 +1,48 @@
 import React, { useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View, Alert } from "react-native";
 import 'react-native-url-polyfill/auto';
+import { getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
 import GoogleAuth from "./GoogleAuth";
+import RoomSelection from "./RoomSelection";
 
 export default function HomeScreen() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const auth = getAuth();
+    onAuthStateChanged(auth, (user) => {
+      setUser(user);
+    });
+  }, []);
+
+  if (user) {
+    return <RoomSelection user={user} />;
+  }
 
   return (
     <View style={styles.container}>
-      <View style={styles.inner}>
-        <View style={styles.logoSection}>
-          <View style={styles.logoRow}>
-            <Image
-              source={require("../assets/images/logo.png")}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-            <Text style={styles.logoText}>grumble</Text>
-          </View>
+      <View style={styles.logoContainer}>
+        <Image
+          source={require("../assets/images/logo.png")}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
+        <Text style={styles.logoText}>grumble</Text>
+      </View>
+      <View style={styles.card}>
+        <View style={styles.bulletItem}>
+          <View style={styles.bullet} />
+          <Text style={styles.howToItem}>Create or join a room</Text>
         </View>
-        <View style={styles.card}>
-          <View style={styles.howToSection}>
-            <Text style={styles.howToTitle}>How to use: </Text>
-            <View style={styles.howToList}>
-              <Text style={styles.howToItem}>• Create or join a room</Text>
-              <Text style={styles.howToItem}>• Swipe on restaurants</Text>
-              <Text style={styles.howToItem}>• Find a place in seconds</Text>
-            </View>
-          </View>
+        <View style={styles.bulletItem}>
+          <View style={styles.bullet} />
+          <Text style={styles.howToItem}>Swipe on restaurants</Text>
+        </View>
+        <View style={[styles.bulletItem, styles.lastBulletItem]}>
+          <View style={styles.bullet} />
+          <Text style={styles.howToItem}>Find a place in seconds</Text>
+        </View>
         <GoogleAuth />
-        </View>
       </View>
     </View>
   );
@@ -40,35 +54,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#A0AEE4",
-  },
-  inner: {
     width: '100%',
-    maxWidth: 400,
-    marginTop: 0,
-    alignItems: 'center',
   },
-  logoSection: {
+  logoContainer: {
     marginBottom: 36,
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
-  },
-  logoRow: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
   },
   logoImage: {
     width: 60,
     height: 60,
-    marginRight: 16,
+    marginRight: 8,
     marginTop: 4,
   },
   logoText: {
     fontSize: 56,
     fontWeight: "bold",
     color: "#fff",
-    letterSpacing: 2,
   },
   card: {
     backgroundColor: "#fff",
@@ -86,28 +90,28 @@ const styles = StyleSheet.create({
     maxWidth: 320,
     alignSelf: 'center',
   },
-  howToSection: {
-    marginTop: 0,
-    marginBottom: 24,
-    alignItems: "flex-start",
+  bulletItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
     width: "100%",
   },
-  howToTitle: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#7084D7",
-    marginBottom: 16,
-    letterSpacing: 1,
+  lastBulletItem: {
+    marginBottom: 24,
   },
-  howToList: {
-    gap: 6,
-    paddingLeft: 18,
+  bullet: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#7084D7",
+    marginRight: 16,
   },
   howToItem: {
-    fontSize: 18,
+    fontSize: 20,
     color: "#7084D7",
-    marginBottom: 6,
-    fontWeight: "500",
-    letterSpacing: 0.2,
+    fontWeight: "bold",
+    letterSpacing: 0.3,
+    flex: 1,
+    flexWrap: "nowrap",
   },
 });
