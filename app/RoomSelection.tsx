@@ -3,7 +3,8 @@ import { collection, doc, getDoc, getDocs, getFirestore, query, setDoc, where } 
 import React, { useState } from "react";
 import { Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import SwipeScreen from "./SwipeScreen";
-import { firestore } from '../utils/firebase';
+
+const firestore = getFirestore();
 
 export default function RoomSelection({ user }) {
   const [currentScreen, setCurrentScreen] = useState('selection');
