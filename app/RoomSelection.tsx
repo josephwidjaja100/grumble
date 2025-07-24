@@ -2,7 +2,7 @@ import { getAuth, signOut } from '@react-native-firebase/auth';
 import { collection, doc, getDoc, getDocs, getFirestore, query, setDoc, where } from '@react-native-firebase/firestore';
 import React, { useState } from "react";
 import { Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import SwipeScreen from "./SwipeScreen";
+import PreSwipeScreen from "./PreSwipeScreen"; 
 
 const firestore = getFirestore();
 
@@ -22,7 +22,7 @@ export default function RoomSelection({ user }) {
   };
 
   const createRoom = async () => {
-    const roomDb = collection(firestore, 'rooms');
+    const roomDb = collection(firestore, 'roomdb');
     const snapshot = await getDocs(roomDb);
 
     snapshot.forEach(doc => {
@@ -47,6 +47,7 @@ export default function RoomSelection({ user }) {
     const roomData = {
       code: newRoomCode,
       host: user.uid,
+      started: false,
       users: [user.uid],
       userNames: { [user.uid]: user.displayName },
       restaurants: [],
@@ -55,39 +56,36 @@ export default function RoomSelection({ user }) {
     };
     
     setCurrentRoomData(roomData);
-    setCurrentScreen('swiping');
+    setCurrentScreen('pre-swiping');
 
-    await setDoc(doc(firestore, 'rooms', newRoomCode), roomData);
+    await setDoc(doc(firestore, 'roomdb', newRoomCode), roomData);
   };
 
   const joinRoom = async () => {
-    const roomDb = collection(firestore, 'rooms');
-    
     if (joinRoomCode.length !== 6) {
       Alert.alert('Invalid Code', 'Room code must be 6 characters');
       return;
     }
     
     // fetch room data from Firebase Firestore and update data 
-    const roomRef = doc(firestore, "rooms", joinRoomCode);
-    const roomData = await getDoc(roomRef);
+    const roomRef = doc(firestore, "roomdb", joinRoomCode);
+    let roomData = (await getDoc(roomRef)).data();
 
     console.log('Room data:', roomData);
-    if (!roomData.exists()) {
+    if (!roomData) {
       Alert.alert('Room Not Found', 'The room you are trying to join does not exist.');
       return;
     }
 
-    await setDoc(roomRef, {
-      users: [...roomData.data().users, user.uid],
-      userNames: {
-        ...roomData.data().userNames,
-        [user.uid]: user.displayName
-      }
-    });
+    if(!roomData.users.includes(user.uid)) {
+      roomData.users.push(user.uid);
+      roomData.userNames[user.uid] = user.displayName;
+    }
+
+    await setDoc(roomRef, roomData);
 
     setCurrentRoomData(roomData);
-    setCurrentScreen('swiping');
+    setCurrentScreen('pre-swiping');
     
     console.log('Joined room:', roomData);
   };
@@ -101,8 +99,9 @@ export default function RoomSelection({ user }) {
     }
   };
 
-  if (currentScreen === 'swiping' && currentRoomData) {
-    return <SwipeScreen roomData={currentRoomData} user={user} />;
+  if (currentScreen === 'pre-swiping' && currentRoomData) {
+    console.log('Current room data:', currentRoomData);
+    return <PreSwipeScreen roomData={currentRoomData} user={user} />;
   }
 
   return (

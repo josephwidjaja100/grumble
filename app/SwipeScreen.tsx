@@ -1,259 +1,268 @@
-import React, { useState, useEffect, useRef } from "react";
-import { 
-  Image, 
-  Pressable, 
-  StyleSheet, 
-  Text, 
-  View, 
-  Animated, 
-  Dimensions,
-  Alert 
-} from "react-native";
+import React, { useState, useRef, useEffect } from "react";
+import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { doc, setDoc, onSnapshot, getDoc } from '@react-native-firebase/firestore';
+import { getFirestore } from '@react-native-firebase/firestore';
+import MatchesScreen from "./MatchesScreen";
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const firestore = getFirestore();
 
-// Mock restaurant data - in real app, this would come from an API
-const mockRestaurants = [
+// Sample restaurant data
+const sampleRestaurants = [
   {
-    id: 1,
-    name: "Tony's Italian Bistro",
+    id: "1",
+    name: "Giuseppe's Italian",
     cuisine: "Italian",
     rating: 4.5,
-    image: "https://via.placeholder.com/300x200/FF6B6B/FFFFFF?text=Italian",
-    description: "Authentic Italian cuisine with fresh pasta"
+    priceRange: "$$",
+    image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop",
+    description: "Authentic Italian cuisine with fresh pasta and wood-fired pizzas"
   },
   {
-    id: 2,
+    id: "2",
+    name: "Dragon Palace",
+    cuisine: "Chinese",
+    rating: 4.2,
+    priceRange: "$",
+    image: "https://images.unsplash.com/photo-1526318896980-cf78c088247c?w=400&h=300&fit=crop",
+    description: "Traditional Chinese dishes with modern presentation"
+  },
+  {
+    id: "3",
+    name: "Burger Junction",
+    cuisine: "American",
+    rating: 4.0,
+    priceRange: "$$",
+    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop",
+    description: "Gourmet burgers made with locally sourced ingredients"
+  },
+  {
+    id: "4",
     name: "Sakura Sushi",
     cuisine: "Japanese",
     rating: 4.7,
-    image: "https://via.placeholder.com/300x200/4ECDC4/FFFFFF?text=Sushi",
-    description: "Fresh sushi and traditional Japanese dishes"
+    priceRange: "$$$",
+    image: "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=400&h=300&fit=crop",
+    description: "Fresh sushi and sashimi prepared by master chefs"
   },
   {
-    id: 3,
-    name: "El Mariachi",
+    id: "5",
+    name: "Taco Libre",
     cuisine: "Mexican",
     rating: 4.3,
-    image: "https://via.placeholder.com/300x200/45B7D1/FFFFFF?text=Mexican",
-    description: "Authentic Mexican flavors and vibrant atmosphere"
+    priceRange: "$",
+    image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop",
+    description: "Authentic Mexican street food and craft cocktails"
   },
-  {
-    id: 4,
-    name: "The Burger Joint",
-    cuisine: "American",
-    rating: 4.2,
-    image: "https://via.placeholder.com/300x200/F39C12/FFFFFF?text=Burgers",
-    description: "Gourmet burgers made with premium ingredients"
-  }
 ];
 
-export default function SwipeScreen({ roomData: initialRoomData, user }) {
-  const [restaurants] = useState(mockRestaurants);
-  const [currentRestaurantIndex, setCurrentRestaurantIndex] = useState(0);
-  const [userSwipes, setUserSwipes] = useState({});
-  const [matches, setMatches] = useState([]);
-  const [showMatch, setShowMatch] = useState(false);
-  const [currentMatch, setCurrentMatch] = useState(null);
-  const [roomData, setRoomData] = useState(initialRoomData);
-  
-  const translateX = useRef(new Animated.Value(0)).current;
-  const opacity = useRef(new Animated.Value(1)).current;
+interface Restaurant {
+  id: string;
+  name: string;
+  cuisine: string;
+  rating: number;
+  priceRange: string;
+  image: string;
+  description: string;
+}
 
-  const currentRestaurant = restaurants[currentRestaurantIndex];
+export default function SwipeScreen({ roomData, user }: { roomData: any; user: any; }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [restaurants] = useState<Restaurant[]>(sampleRestaurants);
+  const [userSwipes, setUserSwipes] = useState<{[key: string]: {[key: string]: 'left' | 'right'}}>({});
+  const [matches, setMatches] = useState<Restaurant[]>([]);
+  const swipeableRef = useRef<Swipeable>(null);
+  const [currentScreen, setCurrentScreen] = useState('swipe');
 
-  // Listen for real-time room updates
+  const currentRestaurant = restaurants[currentIndex];
+
+  // Listen for real-time updates to room data
   useEffect(() => {
-    // This would be where you set up a real-time listener to Firebase Firestore
-    // For example, using onSnapshot to listen for changes to the room document
-    
-    // const unsubscribe = firestore()
-    //   .collection('rooms')
-    //   .doc(roomData.code)
-    //   .onSnapshot((documentSnapshot) => {
-    //     if (documentSnapshot.exists) {
-    //       const updatedRoomData = documentSnapshot.data();
-    //       setRoomData(updatedRoomData);
-    //       setUserSwipes(updatedRoomData.userSwipes || {});
-    //       setMatches(updatedRoomData.matches || []);
-    //     }
-    //   });
+    const roomRef = doc(firestore, 'roomdb', roomData.code);
+    const unsubscribe = onSnapshot(roomRef, (doc) => {
+      if (doc.exists()) {
+        const data = doc.data();
 
-    // return () => unsubscribe();
+        setUserSwipes(data.userSwipes || {});
+        setMatches(data.matches || []);
+      }
+    });
 
-    // For now, we'll simulate real-time updates with a simple interval
-    const simulateRealTimeUpdates = setInterval(() => {
-      // In a real app, this would be handled by the Firebase listener above
-      console.log('Checking for room updates...');
-    }, 5000);
+    return () => unsubscribe();
+  }, [roomData.code]);
 
-    return () => clearInterval(simulateRealTimeUpdates);
-  }, []);
-
-  // Update room data in Firebase when user swipes
-  const updateRoomData = async (newUserSwipes, newMatches = matches) => {
-    const updatedRoomData = {
-      ...roomData,
-      userSwipes: newUserSwipes,
-      matches: newMatches,
-      lastUpdated: new Date().toISOString()
+  const checkForMatch = async (restaurantId: string, swipeDirection: 'left' | 'right') => {
+    const updatedSwipes = {
+      ...userSwipes,
+      [restaurantId]: {
+        ...userSwipes[restaurantId],
+        [user.uid]: swipeDirection
+      }
     };
 
-    // This is where you would update Firebase Firestore
-    // await firestore()
-    //   .collection('rooms')
-    //   .doc(roomData.code)
-    //   .update(updatedRoomData);
+    roomData.userSwipes = updatedSwipes;
 
-    console.log('Would update room data:', updatedRoomData);
+    // Check if all users have swiped right on this restaurant
+    const allUsersSwipedRight = roomData.users.every((userId: string) => 
+      updatedSwipes[restaurantId][userId] === 'right'
+    );
+    const roomRef = doc(firestore, 'roomdb', roomData.code);
+    await setDoc(roomRef, roomData);
+
+    if (allUsersSwipedRight) {
+      const matchedRestaurant = restaurants.find(r => r.id === restaurantId);
+      if (matchedRestaurant) {
+        const updatedMatches = [...matches, matchedRestaurant];
+        roomData.matches = updatedMatches;
+        // Update Firestore
+        await setDoc(roomRef, roomData);
+
+        // Show match alert
+        Alert.alert(
+          "It's a Match! 🎉",
+          `Everyone loved ${matchedRestaurant.name}!`,
+          [{ text: "Awesome!", style: "default" }]
+        );
+        // setCurrentScreen('matches');
+      }
+    }
   };
 
-  const handleSwipe = (direction) => {
-    const restaurantId = currentRestaurant.id;
-    const isRightSwipe = direction === 'right';
-    
-    // Update user swipes
-    const newUserSwipes = {
-      ...userSwipes,
-      [`${restaurantId}_${user.uid}`]: isRightSwipe
-    };
-    setUserSwipes(newUserSwipes);
+  const nextRestaurant = restaurants[currentIndex + 1];
 
-    // Check if all users in room have swiped on this restaurant
-    const allUserIds = roomData.users;
-    const swipesForRestaurant = allUserIds.every(userId => 
-      newUserSwipes[`${restaurantId}_${userId}`] !== undefined
-    );
-
-    if (swipesForRestaurant) {
-      // Check if all users swiped right
-      const allSwipedRight = allUserIds.every(userId => 
-        newUserSwipes[`${restaurantId}_${userId}`] === true
+  const renderCard = () => {
+    if (!nextRestaurant) {
+      return (
+        <View style={styles.card}>
+          <View style={styles.cardContent}>
+            <Text style={styles.restaurantName}>No More Restaurants!</Text>
+            <Text style={styles.description}>You've swiped through all available options.</Text>
+          </View>
+        </View>
       );
-
-      if (allSwipedRight) {
-        // It's a match!
-        setCurrentMatch(currentRestaurant);
-        setShowMatch(true);
-        
-        const newMatches = [...matches, currentRestaurant];
-        setMatches(newMatches);
-        
-        // Update room data with new match
-        updateRoomData(newUserSwipes, newMatches);
-        
-        setTimeout(() => {
-          setShowMatch(false);
-        }, 4000);
-      } else {
-        // Update room data even if no match
-        updateRoomData(newUserSwipes);
-      }
-    } else {
-      // Update room data with new swipe
-      updateRoomData(newUserSwipes);
     }
 
-    // Animate card out and move to next restaurant
-    Animated.parallel([
-      Animated.timing(translateX, {
-        toValue: direction === 'right' ? screenWidth : -screenWidth,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      })
-    ]).start(() => {
-      // Reset animations and move to next restaurant
-      translateX.setValue(0);
-      opacity.setValue(1);
-      setCurrentRestaurantIndex((prev) => (prev + 1) % restaurants.length);
-    });
-  };
-
-  if (showMatch && currentMatch) {
     return (
-      <View style={styles.matchContainer}>
-        <View style={styles.matchCard}>
-          <Text style={styles.matchTitle}>🎉 IT'S A MATCH! 🎉</Text>
-          <View style={styles.matchRestaurantInfo}>
-            <Text style={styles.matchRestaurantName}>{currentMatch.name}</Text>
-            <Text style={styles.matchRestaurantCuisine}>{currentMatch.cuisine}</Text>
-            <Text style={styles.matchRestaurantRating}>⭐ {currentMatch.rating}</Text>
+      <View style={styles.card}>
+        <Image
+          source={{ uri: nextRestaurant.image }}
+          style={styles.restaurantImage}
+        />
+        <View style={styles.cardContent}>
+          <Text style={styles.restaurantName}>{nextRestaurant.name}</Text>
+          <Text style={styles.restaurantCuisine}>{nextRestaurant.cuisine}</Text>
+          <View style={styles.restaurantInfo}>
+            <Text style={styles.rating}>⭐ {nextRestaurant.rating}</Text>
+            <Text style={styles.priceRange}>{nextRestaurant.priceRange}</Text>
           </View>
-          <Text style={styles.matchDescription}>
-            Everyone in the room loves this place!
-          </Text>
-          <Text style={styles.matchSubtext}>
-            {currentMatch.description}
-          </Text>
+          <Text style={styles.description}>{nextRestaurant.description}</Text>
         </View>
       </View>
     );
+  };
+
+  // Handle swipe gestures
+  const onSwipeableOpen = async (direction: 'left' | 'right') => {
+    swipeableRef.current?.close();
+    
+    if (direction === 'left') {
+      await checkForMatch(currentRestaurant.id, 'left');
+    } 
+    else {
+      await checkForMatch(currentRestaurant.id, 'right');
+    }
+
+    setTimeout(() => {
+      setCurrentIndex(prev => prev + 1);
+    }, 300);
+  };
+
+  useEffect(() => {
+    if (currentIndex >= restaurants.length) {
+      setCurrentScreen('matches');
+    }
+  }, [currentIndex, restaurants.length]);
+  
+  if (currentScreen === 'matches') {
+    return <MatchesScreen roomData={roomData} user={user} />;
   }
 
   return (
-    <View style={styles.container}>
+    <GestureHandlerRootView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerText}>Room: {roomData.code}</Text>
-        <Text style={styles.usersText}>
-          Users ({roomData.users.length}): {Object.values(roomData.userNames).join(', ')}
-        </Text>
-      </View>
-
-      {matches.length > 0 && (
-        <View style={styles.matchesHeader}>
-          <Text style={styles.matchesText}>Matches: {matches.length}</Text>
+        <View style={styles.logoContainer}>
+          <Image
+            source={require("../assets/images/logo.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.logoText}>grumble</Text>
         </View>
-      )}
-
-      <View style={styles.cardContainer}>
-        <Animated.View 
-          style={[
-            styles.restaurantCard,
-            {
-              transform: [{ translateX }],
-              opacity,
-            }
-          ]}
-        >
-          <View style={styles.restaurantImage}>
-            <Text style={styles.placeholderImage}>{currentRestaurant.cuisine}</Text>
-          </View>
-          <View style={styles.restaurantInfo}>
-            <Text style={styles.restaurantName}>{currentRestaurant.name}</Text>
-            <Text style={styles.restaurantCuisine}>{currentRestaurant.cuisine}</Text>
-            <Text style={styles.restaurantRating}>⭐ {currentRestaurant.rating}</Text>
-            <Text style={styles.restaurantDescription}>{currentRestaurant.description}</Text>
-          </View>
-        </Animated.View>
       </View>
 
-      <View style={styles.buttonContainer}>
-        <Pressable 
-          style={[styles.swipeButton, styles.rejectButton]} 
-          onPress={() => handleSwipe('left')}
-        >
-          <Text style={styles.buttonText}>✕</Text>
-        </Pressable>
-        
-        <Pressable 
-          style={[styles.swipeButton, styles.likeButton]} 
-          onPress={() => handleSwipe('right')}
-        >
-          <Text style={styles.buttonText}>♥</Text>
-        </Pressable>
-      </View>
+      <View style={styles.content}>
+        <View style={styles.cardContainer}>
+          { currentRestaurant && (
+            <Swipeable
+              ref={swipeableRef}
+              renderLeftActions={renderCard}
+              renderRightActions={renderCard}
+              onSwipeableOpen={onSwipeableOpen}
+              leftThreshold={100}
+              rightThreshold={100}
+            >
+              <View style={styles.card}>
+                <Image
+                  source={{ uri: currentRestaurant.image }}
+                  style={styles.restaurantImage}
+                />
+                <View style={styles.cardContent}>
+                  <Text style={styles.restaurantName}>{currentRestaurant.name}</Text>
+                  <Text style={styles.restaurantCuisine}>{currentRestaurant.cuisine}</Text>
+                  <View style={styles.restaurantInfo}>
+                    <Text style={styles.rating}>⭐ {currentRestaurant.rating}</Text>
+                    <Text style={styles.priceRange}>{currentRestaurant.priceRange}</Text>
+                  </View>
+                  <Text style={styles.description}>{currentRestaurant.description}</Text>
+                </View>
+              </View>
+            </Swipeable>
+          )}
+        </View>
 
-      <View style={styles.progressContainer}>
-        <Text style={styles.progressText}>
-          {currentRestaurantIndex + 1} of {restaurants.length}
-        </Text>
+        <View style={styles.buttonContainer}>
+          <Pressable
+            style={styles.actionButton}
+            onPress={() => onSwipeableOpen('left')}
+          >
+            <Text style={styles.buttonIcon}>✗</Text>
+          </Pressable>
+          
+          <Pressable
+            style={styles.actionButton}
+            onPress={() => onSwipeableOpen('right')}
+          >
+            <Text style={styles.buttonIcon}>✓</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.progressContainer}>
+          <Text style={styles.progressText}>
+            {currentIndex + 1} of {restaurants.length}
+          </Text>
+          <Text style={styles.matchText}>
+            Matches: {matches.length}
+          </Text>
+        </View>
+
+        <View style={styles.instructionContainer}>
+          <Text style={styles.instructionText}>
+            Swipe left to pass, right to like, or use buttons below
+          </Text>
+        </View>
       </View>
-    </View>
+    </GestureHandlerRootView>
   );
 }
 
@@ -264,183 +273,206 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
     paddingHorizontal: 20,
+    marginBottom: 20,
   },
-  headerText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
+  logoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  usersText: {
-    fontSize: 16,
-    color: '#fff',
-    opacity: 0.9,
-    textAlign: 'center',
+  logoImage: {
+    width: 40,
+    height: 40,
+    marginRight: 12,
   },
-  matchesHeader: {
+  logoText: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  content: {
+    flex: 1,
     alignItems: 'center',
-    marginBottom: 10,
-  },
-  matchesText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 20,
   },
   cardContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  restaurantCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    width: '90%',
+    width: '100%',
     maxWidth: 350,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 10,
+    justifyContent: 'center',
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 8,
+    overflow: 'hidden',
   },
   restaurantImage: {
-    height: 200,
-    backgroundColor: '#f0f0f0',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: '100%',
+    height: 250,
   },
-  placeholderImage: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#999',
-  },
-  restaurantInfo: {
+  cardContent: {
     padding: 20,
   },
   restaurantName: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   restaurantCuisine: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#7084D7',
     fontWeight: '600',
     marginBottom: 8,
   },
-  restaurantRating: {
-    fontSize: 16,
-    color: '#666',
+  restaurantInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
   },
-  restaurantDescription: {
+  rating: {
     fontSize: 16,
+    fontWeight: '600',
+  },
+  priceRange: {
+    fontSize: 16,
+    fontWeight: '600',
     color: '#666',
-    lineHeight: 22,
+  },
+  description: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  backgroundCard: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    overflow: 'hidden',
+    opacity: 0.9,
+  },
+  actionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  leftAction: {
+    backgroundColor: '#ff4444',
+    marginRight: 10,
+  },
+  rightAction: {
+    backgroundColor: '#4CAF50',
+    marginLeft: 10,
+  },
+  actionText: {
+    fontSize: 48,
+    marginBottom: 8,
+  },
+  actionLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingHorizontal: 60,
-    paddingBottom: 40,
+    width: '100%',
+    maxWidth: 300,
+    marginVertical: 20,
   },
-  swipeButton: {
+  actionButton: {
+    backgroundColor: '#fff',
     width: 70,
     height: 70,
     borderRadius: 35,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  rejectButton: {
-    backgroundColor: '#FF6B6B',
+  passButton: {
+    backgroundColor: '#ff4444',
   },
   likeButton: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#4CAF50',
   },
   buttonText: {
     fontSize: 32,
-    color: '#fff',
+  },
+  buttonIcon: {
+    fontSize: 28,
     fontWeight: 'bold',
+    color: '#7084D7',
   },
   progressContainer: {
     alignItems: 'center',
-    paddingBottom: 20,
+    marginBottom: 10,
   },
   progressText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  matchText: {
     fontSize: 14,
     color: '#fff',
     opacity: 0.8,
   },
-  matchContainer: {
-    flex: 1,
-    backgroundColor: "#A0AEE4",
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  matchCard: {
-    backgroundColor: '#fff',
-    borderRadius: 30,
-    padding: 40,
-    margin: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.3,
-    shadowRadius: 30,
-    elevation: 15,
-  },
-  matchTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#7084D7',
+  instructionContainer: {
+    paddingHorizontal: 20,
     marginBottom: 20,
+  },
+  instructionText: {
+    fontSize: 14,
+    color: '#fff',
     textAlign: 'center',
+    opacity: 0.8,
+    fontStyle: 'italic',
   },
-  matchRestaurantInfo: {
+  endCard: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 40,
     alignItems: 'center',
-    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 8,
   },
-  matchRestaurantName: {
+  endTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 8,
   },
-  matchRestaurantCuisine: {
-    fontSize: 18,
-    color: '#7084D7',
-    marginBottom: 8,
-  },
-  matchRestaurantRating: {
+  endSubtitle: {
     fontSize: 16,
     color: '#666',
+    textAlign: 'center',
+    marginBottom: 16,
   },
-  matchDescription: {
+  matchCount: {
     fontSize: 18,
-    color: '#4ECDC4',
     fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  matchSubtext: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 22,
+    color: '#7084D7',
   },
 });
