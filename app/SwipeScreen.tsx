@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Image, Pressable, StyleSheet, Text, View, Animated } from "react-native";
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { GestureHandlerRootView, PanGestureHandler } from "react-native-gesture-handler";
 import { doc, setDoc, onSnapshot, getDoc } from '@react-native-firebase/firestore';
 import { getFirestore } from '@react-native-firebase/firestore';
 import MatchesScreen from "./MatchesScreen";
@@ -72,8 +72,13 @@ export default function SwipeScreen({ roomData, user }: { roomData: any; user: a
   const [restaurants] = useState<Restaurant[]>(sampleRestaurants);
   const [userSwipes, setUserSwipes] = useState<{[key: string]: {[key: string]: 'left' | 'right'}}>({});
   const [matches, setMatches] = useState<Restaurant[]>([]);
-  const swipeableRef = useRef<Swipeable>(null);
   const [currentScreen, setCurrentScreen] = useState('swipe');
+  const [isAnimating, setIsAnimating] = useState(false);
+  
+  // Animation values
+  const cardTranslateX = useRef(new Animated.Value(0)).current;
+  const cardOpacity = useRef(new Animated.Value(1)).current;
+  const cardRotation = useRef(new Animated.Value(0)).current;
 
   const currentRestaurant = restaurants[currentIndex];
 
@@ -124,27 +129,59 @@ export default function SwipeScreen({ roomData, user }: { roomData: any; user: a
           `Everyone loved ${matchedRestaurant.name}!`,
           [{ text: "Awesome!", style: "default" }]
         );
-        // setCurrentScreen('matches');
       }
     }
   };
 
+  const animateCardOut = (direction: 'left' | 'right') => {
+    if (isAnimating) return;
+    
+    setIsAnimating(true);
+    const toValue = direction === 'left' ? -400 : 400;
+    const rotationValue = direction === 'left' ? -0.3 : 0.3;
+
+    Animated.parallel([
+      Animated.timing(cardTranslateX, {
+        toValue,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardRotation, {
+        toValue: rotationValue,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // Reset animation values for next card
+      cardTranslateX.setValue(0);
+      cardOpacity.setValue(1);
+      cardRotation.setValue(0);
+      setIsAnimating(false);
+      setCurrentIndex(prev => prev + 1);
+    });
+  };
+
+  const handleSwipe = async (direction: 'left' | 'right') => {
+    if (!currentRestaurant || isAnimating) return;
+    
+    await checkForMatch(currentRestaurant.id, direction);
+    animateCardOut(direction);
+  };
+
   const nextRestaurant = restaurants[currentIndex + 1];
 
-  const renderCard = () => {
+  const renderBackgroundCard = () => {
     if (!nextRestaurant) {
-      return (
-        <View style={styles.card}>
-          <View style={styles.cardContent}>
-            <Text style={styles.restaurantName}>No More Restaurants!</Text>
-            <Text style={styles.description}>You've swiped through all available options.</Text>
-          </View>
-        </View>
-      );
+      return null;
     }
 
     return (
-      <View style={styles.card}>
+      <View style={[styles.card, styles.backgroundCard]}>
         <Image
           source={{ uri: nextRestaurant.image }}
           style={styles.restaurantImage}
@@ -162,22 +199,6 @@ export default function SwipeScreen({ roomData, user }: { roomData: any; user: a
     );
   };
 
-  // Handle swipe gestures
-  const onSwipeableOpen = async (direction: 'left' | 'right') => {
-    swipeableRef.current?.close();
-    
-    if (direction === 'left') {
-      await checkForMatch(currentRestaurant.id, 'left');
-    } 
-    else {
-      await checkForMatch(currentRestaurant.id, 'right');
-    }
-
-    setTimeout(() => {
-      setCurrentIndex(prev => prev + 1);
-    }, 300);
-  };
-
   useEffect(() => {
     if (currentIndex >= restaurants.length) {
       setCurrentScreen('matches');
@@ -187,6 +208,19 @@ export default function SwipeScreen({ roomData, user }: { roomData: any; user: a
   if (currentScreen === 'matches') {
     return <MatchesScreen roomData={roomData} user={user} />;
   }
+
+  const cardAnimatedStyle = {
+    transform: [
+      { translateX: cardTranslateX },
+      { 
+        rotate: cardRotation.interpolate({
+          inputRange: [-1, 0, 1],
+          outputRange: ['-30deg', '0deg', '30deg'],
+        })
+      }
+    ],
+    opacity: cardOpacity,
+  };
 
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -203,45 +237,79 @@ export default function SwipeScreen({ roomData, user }: { roomData: any; user: a
 
       <View style={styles.content}>
         <View style={styles.cardContainer}>
-          { currentRestaurant && (
-            <Swipeable
-              ref={swipeableRef}
-              renderLeftActions={renderCard}
-              renderRightActions={renderCard}
-              onSwipeableOpen={onSwipeableOpen}
-              leftThreshold={100}
-              rightThreshold={100}
-            >
-              <View style={styles.card}>
-                <Image
-                  source={{ uri: currentRestaurant.image }}
-                  style={styles.restaurantImage}
-                />
-                <View style={styles.cardContent}>
-                  <Text style={styles.restaurantName}>{currentRestaurant.name}</Text>
-                  <Text style={styles.restaurantCuisine}>{currentRestaurant.cuisine}</Text>
-                  <View style={styles.restaurantInfo}>
-                    <Text style={styles.rating}>⭐ {currentRestaurant.rating}</Text>
-                    <Text style={styles.priceRange}>{currentRestaurant.priceRange}</Text>
+          {/* Background card */}
+          {renderBackgroundCard()}
+          
+          {/* Current card with animation */}
+          {currentRestaurant && (
+            <Animated.View style={[styles.card, styles.topCard, cardAnimatedStyle]}>
+              <PanGestureHandler
+                onGestureEvent={(event) => {
+                  if (!isAnimating) {
+                    const { translationX } = event.nativeEvent;
+                    cardTranslateX.setValue(translationX);
+                    cardRotation.setValue(translationX / 300); // Rotation based on translation
+                  }
+                }}
+                onHandlerStateChange={(event) => {
+                  if (event.nativeEvent.state === 5 && !isAnimating) { // END state
+                    const { translationX, velocityX } = event.nativeEvent;
+                    const swipeThreshold = 100;
+                    const velocityThreshold = 500;
+                    
+                    if (translationX > swipeThreshold || velocityX > velocityThreshold) {
+                      handleSwipe('right');
+                    } else if (translationX < -swipeThreshold || velocityX < -velocityThreshold) {
+                      handleSwipe('left');
+                    } else {
+                      // Snap back to center
+                      Animated.parallel([
+                        Animated.spring(cardTranslateX, {
+                          toValue: 0,
+                          useNativeDriver: true,
+                        }),
+                        Animated.spring(cardRotation, {
+                          toValue: 0,
+                          useNativeDriver: true,
+                        }),
+                      ]).start();
+                    }
+                  }
+                }}
+              >
+                <View>
+                  <Image
+                    source={{ uri: currentRestaurant.image }}
+                    style={styles.restaurantImage}
+                  />
+                  <View style={styles.cardContent}>
+                    <Text style={styles.restaurantName}>{currentRestaurant.name}</Text>
+                    <Text style={styles.restaurantCuisine}>{currentRestaurant.cuisine}</Text>
+                    <View style={styles.restaurantInfo}>
+                      <Text style={styles.rating}>⭐ {currentRestaurant.rating}</Text>
+                      <Text style={styles.priceRange}>{currentRestaurant.priceRange}</Text>
+                    </View>
+                    <Text style={styles.description}>{currentRestaurant.description}</Text>
                   </View>
-                  <Text style={styles.description}>{currentRestaurant.description}</Text>
                 </View>
-              </View>
-            </Swipeable>
+              </PanGestureHandler>
+            </Animated.View>
           )}
         </View>
 
         <View style={styles.buttonContainer}>
           <Pressable
             style={styles.actionButton}
-            onPress={() => onSwipeableOpen('left')}
+            onPress={() => handleSwipe('left')}
+            disabled={isAnimating}
           >
             <Text style={styles.buttonIcon}>✗</Text>
           </Pressable>
           
           <Pressable
             style={styles.actionButton}
-            onPress={() => onSwipeableOpen('right')}
+            onPress={() => handleSwipe('right')}
+            disabled={isAnimating}
           >
             <Text style={styles.buttonIcon}>✓</Text>
           </Pressable>
@@ -294,7 +362,7 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   content: {
-    flex: 1,
+    flex: 0.95,
     alignItems: 'center',
     paddingHorizontal: 20,
   },
@@ -303,6 +371,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 350,
     justifyContent: 'center',
+    position: 'relative',
   },
   card: {
     backgroundColor: "#fff",
@@ -313,6 +382,18 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 8,
     overflow: 'hidden',
+  },
+  topCard: {
+    position: 'absolute',
+    width: '100%',
+    zIndex: 2,
+  },
+  backgroundCard: {
+    position: 'absolute',
+    width: '100%',
+    opacity: 0.8,
+    transform: [{ scale: 0.95 }],
+    zIndex: 1,
   },
   restaurantImage: {
     width: '100%',
@@ -331,7 +412,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#7084D7',
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   restaurantInfo: {
     flexDirection: 'row',
@@ -353,40 +434,6 @@ const styles = StyleSheet.create({
     color: '#666',
     lineHeight: 20,
   },
-  backgroundCard: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-    overflow: 'hidden',
-    opacity: 0.9,
-  },
-  actionContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 20,
-  },
-  leftAction: {
-    backgroundColor: '#ff4444',
-    marginRight: 10,
-  },
-  rightAction: {
-    backgroundColor: '#4CAF50',
-    marginLeft: 10,
-  },
-  actionText: {
-    fontSize: 48,
-    marginBottom: 8,
-  },
-  actionLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -407,18 +454,8 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
-  passButton: {
-    backgroundColor: '#ff4444',
-  },
-  likeButton: {
-    backgroundColor: '#4CAF50',
-  },
-  buttonText: {
-    fontSize: 32,
-  },
   buttonIcon: {
     fontSize: 28,
-    fontWeight: 'bold',
     color: '#7084D7',
   },
   progressContainer: {
@@ -441,38 +478,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   instructionText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#fff',
     textAlign: 'center',
     opacity: 0.8,
     fontStyle: 'italic',
-  },
-  endCard: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 40,
-    alignItems: 'center',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 8,
-  },
-  endTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  endSubtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  matchCount: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#7084D7',
   },
 });

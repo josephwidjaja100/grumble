@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Image, Pressable, StyleSheet, Text, View, ScrollView, Dimensions } from "react-native";
 import { doc, setDoc, onSnapshot, getDoc } from '@react-native-firebase/firestore';
 import { getFirestore } from '@react-native-firebase/firestore';
 
@@ -20,31 +20,73 @@ export default function MatchesScreen({ roomData, user }: { roomData: any; user:
     return () => unsubscribe();
   }, [roomData.code]);
 
+  const renderMatchCard = (restaurant: any, index: number) => (
+    <View style={styles.card} key={index}>
+      <Image
+        source={{ uri: restaurant.image }}
+        style={styles.restaurantImage}
+      />
+      <View style={styles.cardContent}>
+        <Text style={styles.restaurantName}>{restaurant.name}</Text>
+        <Text style={styles.restaurantCuisine}>{restaurant.cuisine}</Text>
+        <View style={styles.restaurantInfo}>
+          <Text style={styles.rating}>⭐ {restaurant.rating}</Text>
+          <Text style={styles.priceRange}>{restaurant.priceRange}</Text>
+        </View>
+        <Text style={styles.description}>{restaurant.description}</Text>
+      </View>
+    </View>
+  );
+
   return (
-  <View style={styles.container}>
-    <View style={styles.header}>
+    <View style={styles.container}>
+      <View style={styles.header}>
         <View style={styles.logoContainer}>
           <Image
             source={require("../assets/images/logo.png")}
             style={styles.logoImage}
             resizeMode="contain"
-        />
-        <Text style={styles.logoText}>grumble</Text>
+          />
+          <Text style={styles.logoText}>grumble</Text>
+        </View>
+      </View>
+      
+      <View style={styles.content}>
+        {matches.length > 0 ? (
+          <>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryTitle}>🎉 Great Choices!</Text>
+              <Text style={styles.summarySubtitle}>
+                Everyone agreed on these restaurants
+              </Text>
+              <Text style={styles.matchCount}>
+                {matches.length} {matches.length === 1 ? 'Match' : 'Matches'}
+              </Text>
+            </View>
+            
+            <ScrollView 
+              style={styles.matchesList}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
+            >
+              {matches.map((restaurant: any, index: number) => renderMatchCard(restaurant, index))}
+              
+              <View style={styles.footerSpace} />
+            </ScrollView>
+          </>
+        ) : (
+          <View style={styles.endCard}>
+            <Text style={styles.endTitle}>No Matches Yet</Text>
+            <Text style={styles.endSubtitle}>
+              Keep swiping to find restaurants everyone loves!
+            </Text>
+            <Text style={styles.noMatchText}>
+              💡 Try being more adventurous with your choices
+            </Text>
+          </View>
+        )}
       </View>
     </View>
-    
-    <View style={styles.content}>
-      <View style={styles.endCard}>
-        <Text style={styles.endTitle}>No More Restaurants!</Text>
-        <Text style={styles.endSubtitle}>
-          You've swiped through all available options.
-        </Text>
-        <Text style={styles.matchCount}>
-          Total Matches: {matches.length}
-        </Text>
-      </View>
-    </View>
-  </View>
   );
 }
 
@@ -77,14 +119,46 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    alignItems: 'center',
     paddingHorizontal: 20,
   },
-  cardContainer: {
+  summaryCard: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 8,
+    marginBottom: 20,
+  },
+  summaryTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  summarySubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  matchCount: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#7084D7',
+    backgroundColor: '#F0F4FF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  matchesList: {
     flex: 1,
-    width: '100%',
-    maxWidth: 350,
-    justifyContent: 'center',
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   card: {
     backgroundColor: "#fff",
@@ -95,6 +169,7 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 8,
     overflow: 'hidden',
+    marginBottom: 20,
   },
   restaurantImage: {
     width: '100%',
@@ -113,7 +188,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#7084D7',
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   restaurantInfo: {
     flexDirection: 'row',
@@ -135,100 +210,6 @@ const styles = StyleSheet.create({
     color: '#666',
     lineHeight: 20,
   },
-  backgroundCard: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-    overflow: 'hidden',
-    opacity: 0.9,
-  },
-  actionContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 20,
-  },
-  leftAction: {
-    backgroundColor: '#ff4444',
-    marginRight: 10,
-  },
-  rightAction: {
-    backgroundColor: '#4CAF50',
-    marginLeft: 10,
-  },
-  actionText: {
-    fontSize: 48,
-    marginBottom: 8,
-  },
-  actionLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    maxWidth: 300,
-    marginVertical: 20,
-  },
-  actionButton: {
-    backgroundColor: '#fff',
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  passButton: {
-    backgroundColor: '#ff4444',
-  },
-  likeButton: {
-    backgroundColor: '#4CAF50',
-  },
-  buttonText: {
-    fontSize: 32,
-  },
-  buttonIcon: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#7084D7',
-  },
-  progressContainer: {
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  progressText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  matchText: {
-    fontSize: 14,
-    color: '#fff',
-    opacity: 0.8,
-  },
-  instructionContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  instructionText: {
-    fontSize: 14,
-    color: '#fff',
-    textAlign: 'center',
-    opacity: 0.8,
-    fontStyle: 'italic',
-  },
   endCard: {
     backgroundColor: "#fff",
     borderRadius: 20,
@@ -239,6 +220,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 24,
     elevation: 8,
+    marginTop: 60,
   },
   endTitle: {
     fontSize: 24,
@@ -252,9 +234,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 16,
   },
-  matchCount: {
-    fontSize: 18,
-    fontWeight: '600',
+  noMatchText: {
+    fontSize: 14,
     color: '#7084D7',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  footerSpace: {
+    height: 20,
   },
 });
