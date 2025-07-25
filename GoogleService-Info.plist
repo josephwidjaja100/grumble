@@ -3,21 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>155134834532-pgght1hkbk8p7uskrdprgc7l0h1ks7mf.apps.googleusercontent.com</string>
+	<string>28290380318-up082tft5jsbv5q70jas5b7eqrtor17p.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.155134834532-pgght1hkbk8p7uskrdprgc7l0h1ks7mf</string>
+	<string>com.googleusercontent.apps.28290380318-up082tft5jsbv5q70jas5b7eqrtor17p</string>
 	<key>API_KEY</key>
-	<string>AIzaSyCqaa9zhvPDsVPXZRxqCuTDDuML3RKfu7c</string>
+	<string>AIzaSyCrJOzDudIxnrFD9tiAGOnprP7khazGgk4</string>
 	<key>GCM_SENDER_ID</key>
-	<string>155134834532</string>
+	<string>28290380318</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.jwidjaja.grumble</string>
+	<string>com.jwidjaja.nomble</string>
 	<key>PROJECT_ID</key>
-	<string>grumble-466615</string>
+	<string>nomble-e6c27</string>
 	<key>STORAGE_BUCKET</key>
-	<string>grumble-466615.firebasestorage.app</string>
+	<string>nomble-e6c27.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -29,6 +29,12 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:155134834532:ios:e3c0d623549f9d8f23ec71</string>
+	<string>1:28290380318:ios:521a0d074cbf3aa2ca740f</string>
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>We need your location to find restaurants near you! Please allow location access.</string>
+  <key>NSLocationAlwaysUsageDescription</key>
+  <string>We need your location to find restaurants near you! Please allow location access.</string>
+  <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+  <string>We need your location to find restaurants near you! Please allow location access.</string>
 </dict>
 </plist>

@@ -40,3 +40,5 @@ app-example
 
 GoogleService-Info.plist
 google-services.json
+
+.env

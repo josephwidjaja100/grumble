@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>grumble</string>
+    <string>nomble</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -27,20 +27,26 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>grumble</string>
-          <string>com.jwidjaja.grumble</string>
+          <string>nomble</string>
+          <string>com.jwidjaja.nomble</string>
+        </array>
+      </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>com.googleusercontent.apps.28290380318-up082tft5jsbv5q70jas5b7eqrtor17p</string>
+        </array>
+      </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>exp+nomble</string>
         </array>
       </dict>
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
           <string>com.googleusercontent.apps.155134834532-pgght1hkbk8p7uskrdprgc7l0h1ks7mf</string>
-        </array>
-      </dict>
-      <dict>
-        <key>CFBundleURLSchemes</key>
-        <array>
-          <string>exp+grumble</string>
         </array>
       </dict>
     </array>
@@ -59,6 +65,12 @@
     </dict>
     <key>NSFaceIDUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>We need your location to find restaurants near you! Please allow location access.</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>We need your location to find restaurants near you! Please allow location access.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>We need your location to find restaurants near you! Please allow location access.</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
@@ -89,5 +101,11 @@
     <string>Automatic</string>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>We need your location to find restaurants near you! Please allow location access.</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>We need your location to find restaurants near you! Please allow location access.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>We need your location to find restaurants near you! Please allow location access.</string>
   </dict>
 </plist>

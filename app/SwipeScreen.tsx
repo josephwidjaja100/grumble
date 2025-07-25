@@ -4,58 +4,10 @@ import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { GestureHandlerRootView, PanGestureHandler } from "react-native-gesture-handler";
 import { doc, setDoc, onSnapshot, getDoc } from '@react-native-firebase/firestore';
 import { getFirestore } from '@react-native-firebase/firestore';
+import Geolocation from '@react-native-community/geolocation';
 import MatchesScreen from "./MatchesScreen";
-
-const firestore = getFirestore();
-
-// Sample restaurant data
-const sampleRestaurants = [
-  {
-    id: "1",
-    name: "Giuseppe's Italian",
-    cuisine: "Italian",
-    rating: 4.5,
-    priceRange: "$$",
-    image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop",
-    description: "Authentic Italian cuisine with fresh pasta and wood-fired pizzas"
-  },
-  {
-    id: "2",
-    name: "Dragon Palace",
-    cuisine: "Chinese",
-    rating: 4.2,
-    priceRange: "$",
-    image: "https://images.unsplash.com/photo-1526318896980-cf78c088247c?w=400&h=300&fit=crop",
-    description: "Traditional Chinese dishes with modern presentation"
-  },
-  {
-    id: "3",
-    name: "Burger Junction",
-    cuisine: "American",
-    rating: 4.0,
-    priceRange: "$$",
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop",
-    description: "Gourmet burgers made with locally sourced ingredients"
-  },
-  {
-    id: "4",
-    name: "Sakura Sushi",
-    cuisine: "Japanese",
-    rating: 4.7,
-    priceRange: "$$$",
-    image: "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=400&h=300&fit=crop",
-    description: "Fresh sushi and sashimi prepared by master chefs"
-  },
-  {
-    id: "5",
-    name: "Taco Libre",
-    cuisine: "Mexican",
-    rating: 4.3,
-    priceRange: "$",
-    image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop",
-    description: "Authentic Mexican street food and craft cocktails"
-  },
-];
+import Config from 'react-native-config';
+import axios from 'axios';
 
 interface Restaurant {
   id: string;
@@ -68,6 +20,91 @@ interface Restaurant {
 }
 
 export default function SwipeScreen({ roomData, user }: { roomData: any; user: any; }) {
+  const firestore = getFirestore();
+
+  const [location, setLocation] = useState(null);
+
+  const fetchRestaurants = async (lat: any, lon: any, radius = 1000) => {
+    const apiKey = Config.GEOAPIFY_API_KEY;
+    const url = `https://api.geoapify.com/v2/place-details?lat=${lat}&lon=${lon}&features=radius_${radius}.restaurant&apiKey=${apiKey}`;
+
+    try {
+      const response = await axios.get(url);
+      console.log(response.data.features);
+      return response.data.features; // Array of restaurant objects
+    } 
+    catch (error) {
+      console.error('Error fetching restaurants:', error);
+      return [];
+    }
+  }; 
+
+  useEffect(() => {
+    Geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setLocation({ latitude, longitude });
+      },
+      (error) => console.log(error),
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
+    );
+    
+    if(location){
+      fetchRestaurants(location.latitude, location.longitude);
+    }
+  }, [location?.latitude, location?.longitude]);
+
+  console.log('Current location:', location?.latitude, location?.longitude);
+
+  // Sample restaurant data
+  const sampleRestaurants = [
+    {
+      id: "1",
+      name: "Giuseppe's Italian",
+      cuisine: "Italian",
+      rating: 4.5,
+      priceRange: "$$",
+      image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop",
+      description: "Authentic Italian cuisine with fresh pasta and wood-fired pizzas"
+    },
+    {
+      id: "2",
+      name: "Dragon Palace",
+      cuisine: "Chinese",
+      rating: 4.2,
+      priceRange: "$",
+      image: "https://images.unsplash.com/photo-1526318896980-cf78c088247c?w=400&h=300&fit=crop",
+      description: "Traditional Chinese dishes with modern presentation"
+    },
+    {
+      id: "3",
+      name: "Burger Junction",
+      cuisine: "American",
+      rating: 4.0,
+      priceRange: "$$",
+      image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop",
+      description: "Gourmet burgers made with locally sourced ingredients"
+    },
+    {
+      id: "4",
+      name: "Sakura Sushi",
+      cuisine: "Japanese",
+      rating: 4.7,
+      priceRange: "$$$",
+      image: "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=400&h=300&fit=crop",
+      description: "Fresh sushi and sashimi prepared by master chefs"
+    },
+    {
+      id: "5",
+      name: "Taco Libre",
+      cuisine: "Mexican",
+      rating: 4.3,
+      priceRange: "$",
+      image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop",
+      description: "Authentic Mexican street food and craft cocktails"
+    },
+  ];
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [restaurants] = useState<Restaurant[]>(sampleRestaurants);
   const [userSwipes, setUserSwipes] = useState<{[key: string]: {[key: string]: 'left' | 'right'}}>({});
@@ -236,6 +273,21 @@ export default function SwipeScreen({ roomData, user }: { roomData: any; user: a
       </View>
 
       <View style={styles.content}>
+        <View style={styles.progressContainer}>
+          <Text style={styles.progressText}>
+            {currentIndex + 1} of {restaurants.length}
+          </Text>
+          <Text style={styles.matchText}>
+            Matches: {matches.length}
+          </Text>
+        </View>
+
+        <View style={styles.instructionContainer}>
+          <Text style={styles.instructionText}>
+            Swipe left to pass, right to like, or use buttons below
+          </Text>
+        </View>
+
         <View style={styles.cardContainer}>
           {/* Background card */}
           {renderBackgroundCard()}
@@ -315,7 +367,7 @@ export default function SwipeScreen({ roomData, user }: { roomData: any; user: a
           </Pressable>
         </View>
 
-        <View style={styles.progressContainer}>
+        {/* <View style={styles.progressContainer}>
           <Text style={styles.progressText}>
             {currentIndex + 1} of {restaurants.length}
           </Text>
@@ -328,7 +380,7 @@ export default function SwipeScreen({ roomData, user }: { roomData: any; user: a
           <Text style={styles.instructionText}>
             Swipe left to pass, right to like, or use buttons below
           </Text>
-        </View>
+        </View> */}
       </View>
     </GestureHandlerRootView>
   );
@@ -362,7 +414,7 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   content: {
-    flex: 0.95,
+    flex: 0.9,
     alignItems: 'center',
     paddingHorizontal: 20,
   },

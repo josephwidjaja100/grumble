@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "grumble",
-    "slug": "grumble",
+    "name": "nomble",
+    "slug": "nomble",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "grumble",
+    "scheme": "nomble",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jwidjaja.grumble",
+      "bundleIdentifier": "com.jwidjaja.nomble",
       "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
@@ -19,7 +19,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.jwidjaja.grumble",
+      "package": "com.jwidjaja.nomble",
       "googleServicesFile": "./google-services.json"
     },
     "web": {
@@ -62,8 +62,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "167804ae-dcae-4898-b9f5-da381c518160"
+        "projectId": "f7d1be20-c8bc-4dc9-8731-adba04a8d5aa"
       }
-    }
+    },
+    "owner": "jwidjaja"
   }
 }

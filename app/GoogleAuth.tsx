@@ -8,9 +8,9 @@ import { GoogleAuthProvider, getAuth, signInWithCredential }  from '@react-nativ
 
 export default function () {
   GoogleSignin.configure({
-    webClientId: '155134834532-lams2c6hbc5clr31b68700rv7a3hcrq9.apps.googleusercontent.com', 
+    webClientId: '28290380318-773ceo520kqdk7bpl5mcmc1274nst4c1.apps.googleusercontent.com', 
     scopes: ['profile', 'email', 'openid'], 
-    iosClientId: '155134834532-pgght1hkbk8p7uskrdprgc7l0h1ks7mf.apps.googleusercontent.com',
+    iosClientId: '28290380318-up082tft5jsbv5q70jas5b7eqrtor17p.apps.googleusercontent.com',
   });
 
   return (
