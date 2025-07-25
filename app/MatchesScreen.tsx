@@ -47,7 +47,7 @@ export default function MatchesScreen({ roomData, user }: { roomData: any; user:
             style={styles.logoImage}
             resizeMode="contain"
           />
-          <Text style={styles.logoText}>grumble</Text>
+          <Text style={styles.logoText}>nomble</Text>
         </View>
       </View>
       

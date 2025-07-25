@@ -27,7 +27,7 @@ export default function HomeScreen() {
           style={styles.logoImage}
           resizeMode="contain"
         />
-        <Text style={styles.logoText}>grumble</Text>
+        <Text style={styles.logoText}>nomble</Text>
       </View>
       <View style={styles.card}>
         <View style={styles.bulletItem}>
